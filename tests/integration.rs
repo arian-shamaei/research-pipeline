@@ -77,8 +77,11 @@ fn screen_input_shows_required_markers() {
 #[test]
 fn screen_input_shows_browse() {
     let out = dump("input", 120, 35);
+    // Slot 1 is a directory slot ([Select Dir]), slots 2-4 are file slots ([Browse...])
     let browse_count = out.matches("[Browse...]").count();
-    assert_eq!(browse_count, 4, "should have 4 browse buttons, got {}", browse_count);
+    let dir_count = out.matches("[Select Dir]").count();
+    assert_eq!(dir_count, 1, "should have 1 directory selector, got {}", dir_count);
+    assert_eq!(browse_count, 3, "should have 3 browse buttons, got {}", browse_count);
 }
 
 #[test]

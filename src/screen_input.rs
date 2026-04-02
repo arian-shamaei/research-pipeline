@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use ratatui::prelude::*;
 use ratatui::widgets::*;
 
-use crate::app::{App, Screen};
+use crate::app::{App, Screen, SlotKind};
 
 /// Screen 2: Input Files configuration.
 /// Fields: project name, venue, 4 file slots, start button.
@@ -53,19 +53,34 @@ impl InputFilesState {
 
     pub fn enter(&mut self, app: &mut App) {
         if self.browsing {
-            // Select file from browser
+            // Select file/directory from browser
             if let Some(path) = self.browser.selected_path() {
-                if path.is_dir() {
-                    self.browser.enter_dir(&path);
-                } else {
-                    // Add file to the active slot
-                    let slot_idx = self.selected - FIELD_SLOT_FIRST;
-                    if let Some(slot) = app.config.slots.get_mut(slot_idx) {
-                        if !slot.files.contains(&path) {
-                            slot.files.push(path);
+                let slot_idx = self.selected - FIELD_SLOT_FIRST;
+                let slot_kind = app.config.slots.get(slot_idx)
+                    .map(|s| s.kind).unwrap_or(SlotKind::Files);
+
+                match slot_kind {
+                    SlotKind::Directory => {
+                        if path.is_dir() {
+                            // For directory slots, selecting a dir picks it
+                            if let Some(slot) = app.config.slots.get_mut(slot_idx) {
+                                slot.path = Some(path);
+                            }
+                            self.browsing = false;
                         }
                     }
-                    self.browsing = false;
+                    SlotKind::Files => {
+                        if path.is_dir() {
+                            self.browser.enter_dir(&path);
+                        } else {
+                            if let Some(slot) = app.config.slots.get_mut(slot_idx) {
+                                if !slot.files.contains(&path) {
+                                    slot.files.push(path);
+                                }
+                            }
+                            self.browsing = false;
+                        }
+                    }
                 }
             }
             return;
@@ -74,7 +89,7 @@ impl InputFilesState {
         if self.editing {
             // Commit edit
             match self.selected {
-                FIELD_NAME => app.config.name = self.edit_buf.clone(),
+                FIELD_NAME => app.config.set_name(&self.edit_buf),
                 FIELD_VENUE => app.config.venue = self.edit_buf.clone(),
                 _ => {}
             }
@@ -101,6 +116,9 @@ impl InputFilesState {
             FIELD_START => {
                 // Validate and start pipeline
                 if !app.config.name.is_empty() {
+                    // Create project directory structure and save manifest
+                    let _ = app.config.create_dirs();
+                    let _ = app.config.save_manifest();
                     app.screen = Screen::PipelineExecution;
                 }
             }
@@ -133,11 +151,14 @@ impl InputFilesState {
     }
 
     pub fn delete_file(&mut self, app: &mut App) {
-        // 'd' key removes last file from current slot
+        // 'd' key removes last file or clears directory from current slot
         if self.selected >= FIELD_SLOT_FIRST && self.selected <= FIELD_SLOT_LAST && !self.editing {
             let slot_idx = self.selected - FIELD_SLOT_FIRST;
             if let Some(slot) = app.config.slots.get_mut(slot_idx) {
-                slot.files.pop();
+                match slot.kind {
+                    SlotKind::Directory => slot.path = None,
+                    SlotKind::Files => { slot.files.pop(); }
+                }
             }
         }
     }
@@ -320,7 +341,7 @@ fn render_fields(area: Rect, buf: &mut Buffer, state: &InputFilesState, app: &Ap
     buf.set_string(x, y, &sep, Style::default().fg(Color::DarkGray));
     y += 1;
 
-    // 4 file slots
+    // 4 input slots
     for (i, slot) in app.config.slots.iter().enumerate() {
         if y + 3 >= area.bottom() {
             break;
@@ -330,20 +351,33 @@ fn render_fields(area: Rect, buf: &mut Buffer, state: &InputFilesState, app: &Ap
         let marker = if is_sel { ">>" } else { "  " };
         let req = if slot.required { "*" } else { " " };
 
-        let file_count = slot.files.len();
-        let status = if file_count > 0 {
-            format!("{} file{} loaded", file_count, if file_count > 1 { "s" } else { "" })
-        } else {
-            "empty".to_string()
+        let (browse_label, status) = match slot.kind {
+            SlotKind::Directory => {
+                let s = match &slot.path {
+                    Some(p) => {
+                        let name = p.file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| p.to_string_lossy().to_string());
+                        format!("-> {}", name)
+                    }
+                    None => "empty".to_string(),
+                };
+                ("[Select Dir]", s)
+            }
+            SlotKind::Files => {
+                let c = slot.files.len();
+                let s = if c > 0 {
+                    format!("{} file{}", c, if c > 1 { "s" } else { "" })
+                } else {
+                    "empty".to_string()
+                };
+                ("[Browse...]", s)
+            }
         };
 
         let line = format!(
-            "{}{} {}. {:<24} [Browse...]  {}",
-            marker,
-            req,
-            i + 1,
-            slot.label,
-            status,
+            "{}{} {}. {:<24} {}  {}",
+            marker, req, i + 1, slot.label, browse_label, status,
         );
         let len = line.len().min(tw.saturating_sub(2));
 
@@ -360,6 +394,18 @@ fn render_fields(area: Rect, buf: &mut Buffer, state: &InputFilesState, app: &Ap
             Style::default().fg(Color::DarkGray),
         );
         y += 1;
+
+        // Show directory path for directory slots
+        if slot.kind == SlotKind::Directory {
+            if let Some(p) = &slot.path {
+                if y < area.bottom().saturating_sub(3) {
+                    let dir_line = format!("         / {}", p.to_string_lossy());
+                    let dl = dir_line.len().min(tw.saturating_sub(2));
+                    buf.set_string(x, y, &dir_line[..dl], Style::default().fg(Color::Green));
+                    y += 1;
+                }
+            }
+        }
 
         // Show loaded files
         for f in &slot.files {

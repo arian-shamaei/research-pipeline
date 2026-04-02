@@ -43,12 +43,11 @@ impl ProjectSelectState {
                 app.screen = Screen::InputFiles;
             }
             n if n >= 2 => {
-                // Open a recent project
+                // Open a recent project -- load full config from manifest
                 let idx = n - 2;
-                if let Some(recent) = app.recents.get(idx) {
-                    app.config.name = recent.name.clone();
-                    app.config.venue = recent.venue.clone();
-                    app.screen = Screen::PipelineExecution;
+                if let Some(recent) = app.recents.get(idx).cloned() {
+                    app.load_project(&recent);
+                    app.screen = Screen::InputFiles;
                 }
             }
             _ => {}
