@@ -20,6 +20,23 @@ use screen_input::InputFilesState;
 use screen_output::OutputState;
 use screen_select::ProjectSelectState;
 
+const GIT_HASH: &str = env!("GIT_HASH");
+
+/// Stamp the git hash into the bottom-right corner of the frame.
+fn stamp_hash(area: Rect, buf: &mut Buffer) {
+    let tag = format!(" {} ", GIT_HASH);
+    let x = area.right().saturating_sub(tag.len() as u16 + 1);
+    let y = area.bottom().saturating_sub(1);
+    if x > area.left() && y >= area.top() {
+        buf.set_string(
+            x,
+            y,
+            &tag,
+            Style::default().fg(Color::DarkGray),
+        );
+    }
+}
+
 fn install_crash_reporter() {
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
@@ -93,6 +110,7 @@ fn dump_frame(screen: &str, width: u16, height: u16) -> String {
             screen_select::render(area, &mut buf, &state, &app);
         }
     }
+    stamp_hash(area, &mut buf);
 
     let mut output = String::new();
     for y in 0..height {
@@ -186,6 +204,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Result<
                     screen_output::render(area, frame.buffer_mut(), &output_state, &app);
                 }
             }
+            stamp_hash(area, frame.buffer_mut());
         })?;
 
         // Input
