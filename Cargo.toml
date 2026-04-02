@@ -1,0 +1,18 @@
+[package]
+name = "research-pipeline"
+version = "1.0.0"
+edition = "2024"
+description = "SEAL Lab Research Pipeline -- standalone 8-stage paper tracking TUI"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+anyhow = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
