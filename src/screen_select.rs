@@ -101,8 +101,9 @@ pub fn render(area: Rect, buf: &mut Buffer, state: &ProjectSelectState, app: &Ap
 
         // Box around label
         let box_w = label.len() + 4;
-        let top_bot = format!("{}+{}+", marker, "-".repeat(box_w - 2));
-        let mid = format!("{}| {} |", marker, label);
+        let top = format!("{}╭{}╮", marker, "─".repeat(box_w - 2));
+        let mid = format!("{}│ {} │", marker, label);
+        let bot = format!("{}╰{}╯", marker, "─".repeat(box_w - 2));
 
         let sel_style = if is_sel {
             Style::default()
@@ -119,7 +120,7 @@ pub fn render(area: Rect, buf: &mut Buffer, state: &ProjectSelectState, app: &Ap
         };
 
         if y + 3 < inner.bottom() {
-            buf.set_string(x, y, &top_bot, border_style);
+            buf.set_string(x, y, &top, border_style);
             y += 1;
             buf.set_string(x, y, &mid, sel_style);
             // Description after the box on the same line
@@ -128,14 +129,14 @@ pub fn render(area: Rect, buf: &mut Buffer, state: &ProjectSelectState, app: &Ap
                 buf.set_string(desc_x, y, desc, Style::default().fg(Color::DarkGray));
             }
             y += 1;
-            buf.set_string(x, y, &top_bot, border_style);
+            buf.set_string(x, y, &bot, border_style);
             y += 2;
         }
     }
 
     // Separator
     if y + 1 < inner.bottom() {
-        let sep = "-".repeat(tw.saturating_sub(4).min(80));
+        let sep = "─".repeat(tw.saturating_sub(4).min(80));
         buf.set_string(x, y, &sep, Style::default().fg(Color::DarkGray));
         y += 1;
     }

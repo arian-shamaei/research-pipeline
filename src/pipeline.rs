@@ -424,7 +424,7 @@ impl PaperPipelinePlane {
             if (x as usize + box_outer) > tw + area_left as usize {
                 break;
             }
-            let top = format!("+{}+", "-".repeat(box_inner));
+            let top = format!("╭{}╮", "─".repeat(box_inner));
             let border_style = if highlight_idx == Some(i) {
                 Style::default()
                     .fg(Color::White)
@@ -457,7 +457,7 @@ impl PaperPipelinePlane {
             let pad_left = padding_total / 2;
             let pad_right = padding_total - pad_left;
             let cell = format!(
-                "|{}{}{}|",
+                "│{}{}{}│",
                 " ".repeat(pad_left),
                 content,
                 " ".repeat(pad_right)
@@ -496,7 +496,7 @@ impl PaperPipelinePlane {
             if (x as usize + box_outer) > tw + area_left as usize {
                 break;
             }
-            let bot = format!("+{}+", "-".repeat(box_inner));
+            let bot = format!("╰{}╯", "─".repeat(box_inner));
             let border_style = if highlight_idx == Some(i) {
                 Style::default()
                     .fg(Color::White)
@@ -641,7 +641,7 @@ impl PaperPipelinePlane {
         }
 
         // Separator
-        let sep: String = "-".repeat(tw.min(60));
+        let sep: String = "─".repeat(tw.min(60));
         buf.set_string(area.x, y, &sep, Style::default().fg(Color::DarkGray));
         y += 1;
 
@@ -1027,7 +1027,7 @@ impl PaperPipelinePlane {
 
         // Separator
         if y < inner.bottom() {
-            let sep: String = "-".repeat(tw);
+            let sep: String = "─".repeat(tw);
             buf.set_string(inner.left(), y, &sep, Style::default().fg(Color::DarkGray));
             y += 1;
         }
@@ -1174,7 +1174,7 @@ impl PaperPipelinePlane {
             y += 2;
 
             // Separator
-            let sep: String = "=".repeat(inner.width as usize);
+            let sep: String = "═".repeat(inner.width as usize);
             buf.set_string(
                 inner.left(),
                 y,

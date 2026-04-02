@@ -178,7 +178,7 @@ pub fn render(area: Rect, buf: &mut Buffer, state: &OutputState, app: &App) {
     // Stats section
     y += 1;
     if y + 4 < inner.bottom().saturating_sub(4) {
-        let sep = "-".repeat(tw.saturating_sub(4).min(80));
+        let sep = "─".repeat(tw.saturating_sub(4).min(80));
         buf.set_string(x, y, &sep, Style::default().fg(Color::DarkGray));
         y += 1;
 
@@ -248,7 +248,7 @@ pub fn render(area: Rect, buf: &mut Buffer, state: &OutputState, app: &App) {
 
     // Action buttons
     if y + 3 < inner.bottom() {
-        let sep = "=".repeat(tw.saturating_sub(4).min(80));
+        let sep = "═".repeat(tw.saturating_sub(4).min(80));
         buf.set_string(
             x,
             y,
@@ -272,8 +272,9 @@ pub fn render(area: Rect, buf: &mut Buffer, state: &OutputState, app: &App) {
                 break;
             }
 
-            let top_bot = format!("+{}+", "-".repeat(box_w - 2));
-            let mid = format!("| {} |", label);
+            let top_str = format!("╭{}╮", "─".repeat(box_w - 2));
+            let bot_str = format!("╰{}╯", "─".repeat(box_w - 2));
+            let mid = format!("│ {} │", label);
 
             let style = if is_sel {
                 Style::default()
@@ -289,9 +290,9 @@ pub fn render(area: Rect, buf: &mut Buffer, state: &OutputState, app: &App) {
                 Style::default().fg(Color::DarkGray)
             };
 
-            buf.set_string(bx, y, &top_bot, border_style);
+            buf.set_string(bx, y, &top_str, border_style);
             buf.set_string(bx, y + 1, &mid, style);
-            buf.set_string(bx, y + 2, &top_bot, border_style);
+            buf.set_string(bx, y + 2, &bot_str, border_style);
             bx += box_w as u16 + 3;
         }
     }

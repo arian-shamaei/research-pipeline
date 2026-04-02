@@ -8,7 +8,7 @@ use std::io;
 use std::time::{Duration, Instant};
 
 use crossterm::{
-    event::{self, Event, KeyCode, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -207,10 +207,13 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Result<
             stamp_hash(area, frame.buffer_mut());
         })?;
 
-        // Input
+        // Input -- only handle key Press events (Windows fires Press+Release)
         let timeout = tick_rate.saturating_sub(frame_start.elapsed());
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
+                if key.kind != KeyEventKind::Press {
+                    continue;
+                }
                 // Global quit
                 if key.code == KeyCode::Char('c')
                     && key.modifiers.contains(KeyModifiers::CONTROL)

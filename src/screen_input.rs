@@ -316,7 +316,7 @@ fn render_fields(area: Rect, buf: &mut Buffer, state: &InputFilesState, app: &Ap
     }
 
     // Separator
-    let sep = "-".repeat(tw.saturating_sub(4).min(80));
+    let sep = "─".repeat(tw.saturating_sub(4).min(80));
     buf.set_string(x, y, &sep, Style::default().fg(Color::DarkGray));
     y += 1;
 
@@ -389,15 +389,12 @@ fn render_fields(area: Rect, buf: &mut Buffer, state: &InputFilesState, app: &Ap
         let can_start = !app.config.name.is_empty();
         let marker = if is_sel { ">>" } else { "  " };
 
-        let label = if can_start {
-            format!("{}+------------------+", marker)
-        } else {
-            format!("{}+------------------+", marker)
-        };
+        let top_line = format!("{}╭──────────────────╮", marker);
+        let bot_line = format!("{}╰──────────────────╯", marker);
         let mid = if can_start {
-            format!("{}| START PIPELINE   |", marker)
+            format!("{}│ START PIPELINE   │", marker)
         } else {
-            format!("{}| (enter name first)|", marker)
+            format!("{}│(enter name first)│", marker)
         };
 
         let color = if !can_start {
@@ -416,11 +413,11 @@ fn render_fields(area: Rect, buf: &mut Buffer, state: &InputFilesState, app: &Ap
             Style::default().fg(color)
         };
 
-        buf.set_string(x, y, &label, style);
+        buf.set_string(x, y, &top_line, style);
         y += 1;
         buf.set_string(x, y, &mid, style);
         y += 1;
-        buf.set_string(x, y, &label, style);
+        buf.set_string(x, y, &bot_line, style);
     }
 
     // Footer
@@ -462,7 +459,7 @@ fn render_browser(area: Rect, buf: &mut Buffer, browser: &FileBrowser) {
     );
     y += 1;
 
-    let sep = "-".repeat(tw);
+    let sep = "─".repeat(tw);
     buf.set_string(inner.left(), y, &sep, Style::default().fg(Color::DarkGray));
     y += 1;
 
