@@ -1,5 +1,6 @@
 mod app;
 mod pipeline;
+mod screen_figures;
 mod screen_input;
 mod screen_output;
 mod screen_select;
@@ -17,6 +18,7 @@ use ratatui::prelude::*;
 use app::{App, Screen};
 use pipeline::PaperPipelinePlane;
 use screen_input::InputFilesState;
+use screen_figures::FiguresState;
 use screen_output::OutputState;
 use screen_select::ProjectSelectState;
 
@@ -100,6 +102,12 @@ fn dump_frame(screen: &str, width: u16, height: u16) -> String {
             plane.update();
             plane.render_detail(area, &mut buf);
         }
+        "figures" => {
+            app.config.name = "test-paper".to_string();
+            app.config.output_dir = crate::app::papers_dir().join("seal-proposal").join("output");
+            let state = FiguresState::new(&app);
+            screen_figures::render(area, &mut buf, &state, &app);
+        }
         "output" => {
             app.config.name = "test-paper".to_string();
             let state = OutputState::new();
@@ -167,6 +175,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Result<
     let mut input_state = InputFilesState::new();
     let mut pipeline_plane = PaperPipelinePlane::new();
     let mut pipeline_detail = false;
+    let mut figures_state = FiguresState::new(&app);
     let mut output_state = OutputState::new();
 
     let tick_rate = Duration::from_millis(250);
@@ -199,6 +208,9 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Result<
                     } else {
                         pipeline_plane.render(area, frame.buffer_mut());
                     }
+                }
+                Screen::Figures => {
+                    screen_figures::render(area, frame.buffer_mut(), &figures_state, &app);
                 }
                 Screen::Output => {
                     screen_output::render(area, frame.buffer_mut(), &output_state, &app);
@@ -269,10 +281,20 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyhow::Result<
                         KeyCode::Up => pipeline_plane.scroll_by(-1),
                         KeyCode::Down => pipeline_plane.scroll_by(1),
                         KeyCode::Char('d') => pipeline_detail = !pipeline_detail,
+                        KeyCode::Char('f') => {
+                            figures_state = FiguresState::new(&app);
+                            app.screen = Screen::Figures;
+                        }
                         KeyCode::Char('o') => {
-                            // Go to output screen
                             app.screen = Screen::Output;
                         }
+                        _ => {}
+                    },
+                    Screen::Figures => match key.code {
+                        KeyCode::Esc => figures_state.escape(&mut app),
+                        KeyCode::Up => figures_state.move_up(),
+                        KeyCode::Down => figures_state.move_down(),
+                        KeyCode::Enter | KeyCode::Char('d') => figures_state.toggle_detail(),
                         _ => {}
                     },
                     Screen::Output => match key.code {

@@ -13,6 +13,7 @@ pub enum Screen {
     ProjectSelect,
     InputFiles,
     PipelineExecution,
+    Figures,
     Output,
 }
 
